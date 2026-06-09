@@ -2,416 +2,261 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALBUM</title>
-    <script name="TouchFree_Tooling" type="text/javascript" src="TouchFree_Tooling.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>ESP8266 远程遥控器</title>
     <style>
         * {
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
         }
-        
         body {
-            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            text-align: center;
             background: white;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-        }
-        
-        /* 开始界面 */
-        .start-screen {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            width: 100vw;
-            background: white;
-            position: relative;
-        }
-        
-        .explore-button {
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 20px 60px;
-            font-size: 24px;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            letter-spacing: 2px;
-        }
-        
-        .explore-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-            background: linear-gradient(45deg, #764ba2 0%, #667eea 100%);
-        }
-        
-        /* 浏览界面 */
-        .browse-screen {
-            display: none;
-            height: 100vh;
-            width: 100vw;
-            position: relative;
-            background: #f5f5f5;
-        }
-        
-        .home-icon {
-            position: absolute;
-            top: 30px;
-            left: 30px;
-            width: 65px;
-            height: 65px;
-            background: #fff;
-            border-radius: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            z-index: 100;
-        }
-        
-        .home-icon:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-        }
-        
-        .home-icon svg {
-            width: 40px;
-            height: 40px;
-            fill: #666;
-        }
-        
-        .photo-container {
-            display: flex;
-            height: 100vh;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .photo-display {
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 30px 40px 40px 40px;
+            border-radius: 32px;
+            box-shadow: 0 25px 40px rgba(0,0,0,0.2);
+            max-width: 500px;
             width: 100%;
-            height: 70vh;
-            position: relative;
         }
-        
-        .photo {
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            border-radius: 15px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
-            transition: all 0.5s ease;
-            position: absolute;
+        h1 {
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
         }
-        
-        /* 主照片 - 中间显示 */
-        .main-photo {
-            width: 60vw;
-            height: 65vh;
-            z-index: 3;
-            opacity: 1;
+        .status-badge {
+            background: #e2e8f0;
+            color: #475569;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 2rem;
         }
-        
-        /* 侧边照片 - 左右两侧部分显示 */
-        .side-photo {
-            width: 25vw;
-            height: 50vh;
-            opacity: 0.7;
-            z-index: 1;
-        }
-        
-        .side-photo.left {
-            left: 5vw;
-            transform: translateX(-50%);
-        }
-        
-        .side-photo.right {
-            right: 5vw;
-            transform: translateX(50%);
-        }
-        
-        .side-photo:hover {
-            opacity: 0.9;
-            transform: translateX(-45%) scale(1.05);
-        }
-        
-        .side-photo.right:hover {
-            transform: translateX(45%) scale(1.05);
-        }
-        
-        .navigation {
-            position: absolute;
-            bottom: 50px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 20px;
-            z-index: 100;
-        }
-        
-        .nav-button {
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.9);
-            border: none;
+        button {
+            width: 220px;
+            height: 220px;
             border-radius: 50%;
+            border: none;
             cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            font-size: 28px;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            background-color: #ef4444;
+            color: white;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            margin: 20px 0;
         }
-        
-        .nav-button:hover {
-            background: white;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        button.active {
+            background-color: #22c55e;
+            transform: scale(1.02);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.25);
         }
-        
-        .nav-button svg {
-            width: 24px;
-            height: 24px;
-            fill: #333;
+        button:active {
+            transform: scale(0.96);
         }
-        
-        .nav-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .info-text {
+            margin: 20px 0 10px;
+            color: #475569;
+            font-size: 0.9rem;
+            background: #f1f5f9;
+            padding: 8px 12px;
+            border-radius: 20px;
+            display: inline-block;
         }
-        
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .explore-button {
-                padding: 15px 40px;
-                font-size: 20px;
-            }
-            
-            .home-icon {
-                top: 20px;
-                left: 20px;
-                width: 40px;
-                height: 40px;
-            }
-            
-            .main-photo {
-                width: 70vw;
-                height: 55vh;
-            }
-            
-            .side-photo {
-                width: 20vw;
-                height: 40vh;
-            }
-            
-            .side-photo.left {
-                left: 2vw;
-                transform: translateX(-40%);
-            }
-            
-            .side-photo.right {
-                right: 2vw;
-                transform: translateX(40%);
-            }
-            
-            .nav-button {
-                width: 40px;
-                height: 40px;
-            }
-            
-            .navigation {
-                bottom: 30px;
-            }
+        .log-area {
+            margin-top: 20px;
+            padding: 12px;
+            background: #0f172a;
+            color: #a5f3c3;
+            border-radius: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            text-align: left;
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid #334155;
         }
-        
-        /* 隐藏类 */
-        .hidden {
-            display: none !important;
+        .log-area div {
+            padding: 4px 0;
+            border-bottom: 1px solid #1e293b;
+            word-break: break-all;
         }
-        
-        .visible {
-            display: flex !important;
+        footer {
+            margin-top: 20px;
+            font-size: 0.7rem;
+            color: #94a3b8;
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.10.1/mqtt.min.js"></script>
 </head>
 <body>
-    <!-- 开始界面 -->
-    <div class="start-screen" id="startScreen">
-        <button class="explore-button" onclick="showBrowseScreen()">探索照片</button>
+<div class="container">
+    <h1>🚀 ESP8266 遥控器</h1>
+    <div class="status-badge" id="mqttStatus">⚙️ 正在连接服务器...</div>
+    <button id="controlBtn">⚪ 关闭</button>
+    <div class="info-text">
+        📡 主题：<strong id="topicName">esp8266/banana/command</strong>
     </div>
-    
-    <!-- 浏览界面 -->
-    <div class="browse-screen" id="browseScreen">
-        <div class="home-icon" onclick="showStartScreen()">
-            <svg viewBox="0 0 24 24">
-                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-            </svg>
-        </div>
-        
-        <div class="photo-container">
-            <div class="photo-display" id="photoDisplay">
-                <!-- 照片将通过JavaScript动态生成 -->
-            </div>
-        </div>
-        
-        <div class="navigation">
-            <button class="nav-button" id="prevButton" onclick="previousPhoto()">
-                <svg viewBox="0 0 24 24">
-                    <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-                </svg>
-            </button>
-            <button class="nav-button" id="nextButton" onclick="nextPhoto()">
-                <svg viewBox="0 0 24 24">
-                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-                </svg>
-            </button>
-        </div>
+    <div class="log-area" id="logArea">
+        <div>📌 系统日志：</div>
     </div>
+    <footer>通过 MQTT 远程控制 | HiveMQ Cloud</footer>
+</div>
 
-    <script>
-        const photos = [
-            'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=2070&q=80',
-            'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=2074&q=80',
-            'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2071&q=80',
-            'https://images.unsplash.com/photo-1418065460487-3956ef138977?auto=format&fit=crop&w=2070&q=80',
-            'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=2070&q=80'
-        ];
-        
-        let currentPhotoIndex = 1; // 从第二张照片开始
-        const totalPhotos = photos.length;
-        
-        // 显示浏览界面
-        function showBrowseScreen() {
-            document.getElementById('startScreen').style.display = 'none';
-            document.getElementById('browseScreen').style.display = 'block';
-            updatePhotoDisplay();
+<script>
+    // ==================== 配置区（请勿随意修改）====================
+    const COMMAND_TOPIC = "esp8266/banana/command";
+    const BROKER_URL = "wss://cbbc9551f4684ab19662c01b6972d3f1.s1.eu.hivemq.cloud:8884/mqtt";
+    const USERNAME = "laolala501";
+    const PASSWORD = "Laola501";
+    // =============================================================
+
+    // DOM 元素
+    const btn = document.getElementById('controlBtn');
+    const mqttStatusSpan = document.getElementById('mqttStatus');
+    const logArea = document.getElementById('logArea');
+    const topicNameSpan = document.getElementById('topicName');
+    topicNameSpan.innerText = COMMAND_TOPIC;
+
+    // 添加日志
+    function addLog(message) {
+        const logEntry = document.createElement('div');
+        const timestamp = new Date().toLocaleTimeString();
+        logEntry.textContent = `[${timestamp}] ${message}`;
+        logArea.appendChild(logEntry);
+        logEntry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        console.log(message);
+    }
+
+    // 按钮状态
+    let isActive = false;
+    let mqttClient = null;
+
+    // 更新按钮外观
+    function updateButtonVisual() {
+        if (isActive) {
+            btn.classList.add('active');
+            btn.innerHTML = '✅ 开启 (1)';
+        } else {
+            btn.classList.remove('active');
+            btn.innerHTML = '❌ 关闭 (0)';
         }
-        
-        // 显示开始界面
-        function showStartScreen() {
-            document.getElementById('startScreen').style.display = 'flex';
-            document.getElementById('browseScreen').style.display = 'none';
-        }
-        
-                // 更新照片显示
-        function updatePhotoDisplay(direction = 0) {
-            const photoDisplay = document.getElementById('photoDisplay');
-            photoDisplay.innerHTML = '';
+    }
 
-            const prevIndex = (currentPhotoIndex - 1 + totalPhotos) % totalPhotos;
-            const nextIndex = (currentPhotoIndex + 1) % totalPhotos;
-
-            // 左侧照片
-            const leftPhoto = document.createElement('div');
-            leftPhoto.className = 'photo side-photo left';
-            leftPhoto.style.backgroundImage = `url('${photos[prevIndex]}')`;
-            leftPhoto.style.transform = direction === -1 ? 'translateX(0)' : 'translateX(-50%)';
-            photoDisplay.appendChild(leftPhoto);
-            // 点击左侧照片切换
-            leftPhoto.addEventListener('click', previousPhoto);
-
-            // 主照片
-            const mainPhoto = document.createElement('div');
-            mainPhoto.className = 'photo main-photo';
-            mainPhoto.style.backgroundImage = `url('${photos[currentPhotoIndex]}')`;
-            mainPhoto.style.transform = 'translateX(0)';
-            photoDisplay.appendChild(mainPhoto);
-
-            // 右侧照片
-            const rightPhoto = document.createElement('div');
-            rightPhoto.className = 'photo side-photo right';
-            rightPhoto.style.backgroundImage = `url('${photos[nextIndex]}')`;
-            rightPhoto.style.transform = direction === 1 ? 'translateX(0)' : 'translateX(50%)';
-            photoDisplay.appendChild(rightPhoto);
-            // 点击右侧照片切换
-            rightPhoto.addEventListener('click', nextPhoto);
-
-            // 鼠标悬停自动切换
-            let leftTimer, rightTimer;
-            leftPhoto.addEventListener('mouseenter', () => { leftTimer = setTimeout(previousPhoto, 3500); });
-            leftPhoto.addEventListener('mouseleave', () => { clearTimeout(leftTimer); });
-            rightPhoto.addEventListener('mouseenter', () => { rightTimer = setTimeout(nextPhoto, 3500); });
-            rightPhoto.addEventListener('mouseleave', () => { clearTimeout(rightTimer); });
-
-            // 动画
-            requestAnimationFrame(() => {
-                if (direction === 1) { mainPhoto.style.transform = 'translateX(-100%)'; rightPhoto.style.transform = 'translateX(0)'; }
-                if (direction === -1) { mainPhoto.style.transform = 'translateX(100%)'; leftPhoto.style.transform = 'translateX(0)'; }
-            });
-
-            // 按钮状态
-            document.getElementById('prevButton').disabled = currentPhotoIndex === 0;
-            document.getElementById('nextButton').disabled = currentPhotoIndex === totalPhotos - 1;
-        }
-
-        
-        // 上一张照片
-        function previousPhoto() {
-            if (currentPhotoIndex > 0) {
-                currentPhotoIndex--;
-                updatePhotoDisplay();
-            }
-        }
-        
-        // 下一张照片
-        function nextPhoto() {
-            if (currentPhotoIndex < totalPhotos - 1) {
-                currentPhotoIndex++;
-                updatePhotoDisplay();
-            }
-        }
-        
-        // 键盘导航
-        document.addEventListener('keydown', function(e) {
-            if (document.getElementById('browseScreen').style.display === 'block') {
-                if (e.key === 'ArrowLeft') {
-                    previousPhoto();
-                } else if (e.key === 'ArrowRight') {
-                    nextPhoto();
-                } else if (e.key === 'Escape') {
-                    showStartScreen();
-                }
-            }
-        });
-        
-        // 触摸滑动支持（移动设备）
-        let startX = 0;
-        let endX = 0;
-        
-        document.addEventListener('touchstart', function(e) {
-            startX = e.touches[0].clientX;
-        });
-        
-        document.addEventListener('touchend', function(e) {
-            endX = e.changedTouches[0].clientX;
-            if (Math.abs(endX - startX) > 50) {
-                if (endX > startX) {
-                    previousPhoto();
+    // 发布状态到 MQTT
+    function publishState(state) {
+        const msg = state ? "1" : "0";
+        addLog(`📤 发送指令：${msg}`);
+        if (mqttClient && mqttClient.connected) {
+            mqttClient.publish(COMMAND_TOPIC, msg, { qos: 1 }, (err) => {
+                if (err) {
+                    addLog(`❌ 发送失败：${err.message}`);
                 } else {
-                    nextPhoto();
+                    addLog(`✅ 指令“${msg}”已成功发送至 Broker`);
+                }
+            });
+        } else {
+            addLog(`⚠️ MQTT 未连接，无法发送指令`);
+        }
+    }
+
+    // 切换按钮状态
+    function toggleState() {
+        isActive = !isActive;
+        updateButtonVisual();
+        publishState(isActive);
+    }
+
+    // 连接 MQTT（WebSocket Secure）
+    function connectMQTT() {
+        const clientId = `web-${Math.random().toString(16).substring(2, 10)}`;
+        addLog(`🔌 正在连接 MQTT Broker（WSS）...`);
+        mqttStatusSpan.innerText = "⚙️ 正在连接...";
+        mqttStatusSpan.style.backgroundColor = "#facc15";
+        mqttStatusSpan.style.color = "#1e293b";
+
+        mqttClient = mqtt.connect(BROKER_URL, {
+            clientId: clientId,
+            username: USERNAME,
+            password: PASSWORD,
+            clean: true,
+            reconnectPeriod: 5000,
+            connectTimeout: 30000,
+            keepalive: 60
+        });
+
+        mqttClient.on('connect', () => {
+            addLog(`✅ MQTT 连接成功 (Client ID: ${clientId})`);
+            mqttStatusSpan.innerText = "✅ 已连接 (WSS)";
+            mqttStatusSpan.style.backgroundColor = "#22c55e";
+            mqttStatusSpan.style.color = "white";
+            // 订阅主题（用于接收可能的反馈）
+            mqttClient.subscribe(COMMAND_TOPIC, { qos: 1 }, (err) => {
+                if (!err) {
+                    addLog(`📡 已订阅主题：${COMMAND_TOPIC}`);
+                } else {
+                    addLog(`⚠️ 订阅主题失败：${err}`);
+                }
+            });
+        });
+
+        mqttClient.on('message', (topic, message) => {
+            const msgStr = message.toString();
+            addLog(`📨 收到消息 [${topic}]：${msgStr}`);
+            if (topic === COMMAND_TOPIC) {
+                const newState = (msgStr === "1");
+                if (newState !== isActive) {
+                    isActive = newState;
+                    updateButtonVisual();
+                    addLog(`🔄 根据外部指令同步按钮状态为 ${msgStr}`);
                 }
             }
         });
-        
-        // 窗口调整大小时重新计算位置
-        window.addEventListener('resize', function() {
-            updatePhotoDisplay();
+
+        mqttClient.on('error', (err) => {
+            addLog(`❌ MQTT 错误：${err.message}`);
+            mqttStatusSpan.innerText = "❌ 连接错误";
+            mqttStatusSpan.style.backgroundColor = "#ef4444";
+            mqttStatusSpan.style.color = "white";
         });
-        
-        // 初始化
-        updatePhotoDisplay();
-    </script>
+
+        mqttClient.on('reconnect', () => {
+            addLog(`🔄 MQTT 正在重连...`);
+            mqttStatusSpan.innerText = "🔄 重连中...";
+            mqttStatusSpan.style.backgroundColor = "#facc15";
+            mqttStatusSpan.style.color = "#1e293b";
+        });
+
+        mqttClient.on('offline', () => {
+            addLog(`⚠️ MQTT 客户端离线`);
+            mqttStatusSpan.innerText = "⚠️ 离线";
+            mqttStatusSpan.style.backgroundColor = "#9ca3af";
+            mqttStatusSpan.style.color = "white";
+        });
+    }
+
+    // 绑定按钮点击事件
+    btn.addEventListener('click', () => {
+        if (mqttClient && mqttClient.connected) {
+            toggleState();
+        } else {
+            addLog(`⚠️ 当前未连接 MQTT，尝试重新连接...`);
+            connectMQTT();
+        }
+    });
+
+    // 启动连接
+    connectMQTT();
+</script>
 </body>
 </html>
