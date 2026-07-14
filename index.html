@@ -3,110 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>ESP8266 远程遥控器</title>
+    <title>ESP32 四舵机遥控器</title>
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
         body {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            font-family: 'Segoe UI', system-ui, sans-serif;
             margin: 0;
             padding: 20px;
         }
         .container {
-            text-align: center;
-            background: white;
-            padding: 30px 40px 40px 40px;
-            border-radius: 32px;
-            box-shadow: 0 25px 40px rgba(0,0,0,0.2);
-            max-width: 500px;
+            background: #1e293b;
+            padding: 30px 35px 40px;
+            border-radius: 40px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+            max-width: 600px;
             width: 100%;
+            color: #f1f5f9;
         }
         h1 {
-            color: #1e293b;
-            margin-bottom: 0.5rem;
+            text-align: center;
+            font-weight: 300;
+            letter-spacing: 1px;
+            margin-top: 0;
+            margin-bottom: 10px;
             font-size: 1.8rem;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         .status-badge {
-            background: #e2e8f0;
-            color: #475569;
-            padding: 8px 16px;
-            border-radius: 40px;
+            text-align: center;
             font-size: 0.85rem;
-            font-weight: 500;
+            background: #334155;
+            padding: 6px 14px;
+            border-radius: 40px;
             display: inline-block;
-            margin-bottom: 2rem;
+            margin: 0 auto 25px;
+            color: #94a3b8;
         }
-        button {
-            width: 220px;
-            height: 220px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            font-size: 28px;
+        .servo-group {
+            background: #0f172a;
+            border-radius: 24px;
+            padding: 18px 20px 20px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+            transition: border-color 0.3s;
+        }
+        .servo-group:hover {
+            border-color: #60a5fa;
+        }
+        .servo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .servo-label {
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+        .servo-value {
+            background: #1e293b;
+            padding: 2px 14px;
+            border-radius: 40px;
             font-weight: bold;
-            transition: all 0.2s ease;
-            background-color: #ef4444;
-            color: white;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            margin: 20px 0;
+            color: #60a5fa;
+            font-size: 1.1rem;
+            min-width: 48px;
+            text-align: center;
         }
-        button.active {
-            background-color: #22c55e;
-            transform: scale(1.02);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.25);
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #334155;
+            border-radius: 10px;
+            outline: none;
+            transition: background 0.2s;
+            margin-top: 8px;
         }
-        button:active {
-            transform: scale(0.96);
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #60a5fa;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(96, 165, 250, 0.4);
+            transition: 0.1s;
         }
-        .info-text {
-            margin: 20px 0 10px;
-            color: #475569;
-            font-size: 0.9rem;
-            background: #f1f5f9;
-            padding: 8px 12px;
-            border-radius: 20px;
-            display: inline-block;
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #60a5fa;
+            cursor: pointer;
+            border: none;
         }
         .log-area {
-            margin-top: 20px;
-            padding: 12px;
+            margin-top: 25px;
             background: #0f172a;
-            color: #a5f3c3;
-            border-radius: 16px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.75rem;
-            text-align: left;
-            max-height: 180px;
+            border-radius: 20px;
+            padding: 12px 16px;
+            max-height: 150px;
             overflow-y: auto;
-            border: 1px solid #334155;
+            font-family: 'Courier New', monospace;
+            font-size: 0.7rem;
+            color: #a5f3c3;
+            border: 1px solid #1e293b;
         }
         .log-area div {
-            padding: 4px 0;
+            padding: 3px 0;
             border-bottom: 1px solid #1e293b;
-            word-break: break-all;
         }
         footer {
+            text-align: center;
             margin-top: 20px;
+            color: #475569;
             font-size: 0.7rem;
-            color: #94a3b8;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.10.1/mqtt.min.js"></script>
 </head>
 <body>
 <div class="container">
-    <h1>🚀 ESP8266 遥控器</h1>
-    <div class="status-badge" id="mqttStatus">⚙️ 正在连接服务器...</div>
-    <button id="controlBtn">⚪ 关闭</button>
-    <div class="info-text">
-        📡 主题：<strong id="topicName">esp8266/banana/command</strong>
+    <h1>🛠️ 四舵机遥控</h1>
+    <div style="text-align:center;">
+        <span class="status-badge" id="mqttStatus">⚙️ 正在连接...</span>
     </div>
+
+    <!-- 四个舵机滑块 -->
+    <div id="servoContainer">
+        <!-- 舵机1 -->
+        <div class="servo-group">
+            <div class="servo-header">
+                <span class="servo-label">舵机 #1 (GPIO18)</span>
+                <span class="servo-value" id="val1">90</span>
+            </div>
+            <input type="range" id="slider1" min="0" max="180" value="90" step="1">
+        </div>
+        <!-- 舵机2 -->
+        <div class="servo-group">
+            <div class="servo-header">
+                <span class="servo-label">舵机 #2 (GPIO19)</span>
+                <span class="servo-value" id="val2">90</span>
+            </div>
+            <input type="range" id="slider2" min="0" max="180" value="90" step="1">
+        </div>
+        <!-- 舵机3 -->
+        <div class="servo-group">
+            <div class="servo-header">
+                <span class="servo-label">舵机 #3 (GPIO21)</span>
+                <span class="servo-value" id="val3">90</span>
+            </div>
+            <input type="range" id="slider3" min="0" max="180" value="90" step="1">
+        </div>
+        <!-- 舵机4 -->
+        <div class="servo-group">
+            <div class="servo-header">
+                <span class="servo-label">舵机 #4 (GPIO22)</span>
+                <span class="servo-value" id="val4">90</span>
+            </div>
+            <input type="range" id="slider4" min="0" max="180" value="90" step="1">
+        </div>
+    </div>
+
     <div class="log-area" id="logArea">
         <div>📌 系统日志：</div>
     </div>
@@ -114,76 +185,81 @@
 </div>
 
 <script>
-    // ==================== 配置区（请勿随意修改）====================
-    const COMMAND_TOPIC = "esp8266/banana/command";
+    // ========== 配置（与 ESP32 代码一致）==========
+    const TOPICS = [
+        "esp32/servo/1",
+        "esp32/servo/2",
+        "esp32/servo/3",
+        "esp32/servo/4"
+    ];
     const BROKER_URL = "wss://cbbc9551f4684ab19662c01b6972d3f1.s1.eu.hivemq.cloud:8884/mqtt";
     const USERNAME = "laolala501";
     const PASSWORD = "Laola501";
-    // =============================================================
+    // ============================================
 
     // DOM 元素
-    const btn = document.getElementById('controlBtn');
-    const mqttStatusSpan = document.getElementById('mqttStatus');
+    const sliders = [
+        document.getElementById('slider1'),
+        document.getElementById('slider2'),
+        document.getElementById('slider3'),
+        document.getElementById('slider4')
+    ];
+    const valueSpans = [
+        document.getElementById('val1'),
+        document.getElementById('val2'),
+        document.getElementById('val3'),
+        document.getElementById('val4')
+    ];
     const logArea = document.getElementById('logArea');
-    const topicNameSpan = document.getElementById('topicName');
-    topicNameSpan.innerText = COMMAND_TOPIC;
+    const mqttStatusSpan = document.getElementById('mqttStatus');
 
-    // 添加日志
-    function addLog(message) {
-        const logEntry = document.createElement('div');
-        const timestamp = new Date().toLocaleTimeString();
-        logEntry.textContent = `[${timestamp}] ${message}`;
-        logArea.appendChild(logEntry);
-        logEntry.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        console.log(message);
-    }
-
-    // 按钮状态
-    let isActive = false;
     let mqttClient = null;
 
-    // 更新按钮外观
-    function updateButtonVisual() {
-        if (isActive) {
-            btn.classList.add('active');
-            btn.innerHTML = '✅ 开启 (1)';
-        } else {
-            btn.classList.remove('active');
-            btn.innerHTML = '❌ 关闭 (0)';
-        }
+    // 日志
+    function addLog(msg) {
+        const div = document.createElement('div');
+        div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        logArea.appendChild(div);
+        logArea.scrollTop = logArea.scrollHeight;
+        console.log(msg);
     }
 
-    // 发布状态到 MQTT
-    function publishState(state) {
-        const msg = state ? "1" : "0";
-        addLog(`📤 发送指令：${msg}`);
+    // 发布角度
+    function publishAngle(index, angle) {
+        const topic = TOPICS[index];
+        const payload = angle.toString();
         if (mqttClient && mqttClient.connected) {
-            mqttClient.publish(COMMAND_TOPIC, msg, { qos: 1 }, (err) => {
-                if (err) {
-                    addLog(`❌ 发送失败：${err.message}`);
-                } else {
-                    addLog(`✅ 指令“${msg}”已成功发送至 Broker`);
-                }
+            mqttClient.publish(topic, payload, { qos: 1 }, (err) => {
+                if (err) addLog(`❌ 舵机${index+1} 发送失败: ${err.message}`);
+                else addLog(`✅ 舵机${index+1} → ${angle}°`);
             });
         } else {
-            addLog(`⚠️ MQTT 未连接，无法发送指令`);
+            addLog(`⚠️ MQTT 未连接，舵机${index+1} 角度 ${angle}° 未发送`);
         }
     }
 
-    // 切换按钮状态
-    function toggleState() {
-        isActive = !isActive;
-        updateButtonVisual();
-        publishState(isActive);
+    // 绑定滑块事件
+    function initSliders() {
+        for (let i = 0; i < 4; i++) {
+            const slider = sliders[i];
+            const span = valueSpans[i];
+            // 初始显示
+            span.textContent = slider.value;
+            // 输入事件
+            slider.addEventListener('input', function() {
+                const val = parseInt(this.value);
+                span.textContent = val;
+                publishAngle(i, val);
+            });
+        }
     }
 
-    // 连接 MQTT（WebSocket Secure）
+    // 连接 MQTT
     function connectMQTT() {
-        const clientId = `web-${Math.random().toString(16).substring(2, 10)}`;
-        addLog(`🔌 正在连接 MQTT Broker（WSS）...`);
-        mqttStatusSpan.innerText = "⚙️ 正在连接...";
-        mqttStatusSpan.style.backgroundColor = "#facc15";
-        mqttStatusSpan.style.color = "#1e293b";
+        const clientId = `web-${Math.random().toString(16).substr(2, 8)}`;
+        addLog(`🔌 连接 MQTT (WSS)...`);
+        mqttStatusSpan.textContent = "⚙️ 连接中...";
+        mqttStatusSpan.style.color = "#facc15";
 
         mqttClient = mqtt.connect(BROKER_URL, {
             clientId: clientId,
@@ -196,66 +272,55 @@
         });
 
         mqttClient.on('connect', () => {
-            addLog(`✅ MQTT 连接成功 (Client ID: ${clientId})`);
-            mqttStatusSpan.innerText = "✅ 已连接 (WSS)";
-            mqttStatusSpan.style.backgroundColor = "#22c55e";
-            mqttStatusSpan.style.color = "white";
-            // 订阅主题（用于接收可能的反馈）
-            mqttClient.subscribe(COMMAND_TOPIC, { qos: 1 }, (err) => {
-                if (!err) {
-                    addLog(`📡 已订阅主题：${COMMAND_TOPIC}`);
-                } else {
-                    addLog(`⚠️ 订阅主题失败：${err}`);
-                }
-            });
+            addLog(`✅ MQTT 连接成功 (ID: ${clientId})`);
+            mqttStatusSpan.textContent = "✅ 已连接 (WSS)";
+            mqttStatusSpan.style.color = "#4ade80";
+            // 订阅所有主题（用于同步其他客户端，可选）
+            for (let t of TOPICS) {
+                mqttClient.subscribe(t, { qos: 1 }, (err) => {
+                    if (!err) addLog(`📡 已订阅 ${t}`);
+                });
+            }
         });
 
         mqttClient.on('message', (topic, message) => {
             const msgStr = message.toString();
-            addLog(`📨 收到消息 [${topic}]：${msgStr}`);
-            if (topic === COMMAND_TOPIC) {
-                const newState = (msgStr === "1");
-                if (newState !== isActive) {
-                    isActive = newState;
-                    updateButtonVisual();
-                    addLog(`🔄 根据外部指令同步按钮状态为 ${msgStr}`);
-                }
+            const angle = parseInt(msgStr);
+            if (isNaN(angle)) return;
+            // 找到对应舵机索引
+            const idx = TOPICS.indexOf(topic);
+            if (idx === -1) return;
+            // 更新滑块（但避免触发 publish 循环）
+            const slider = sliders[idx];
+            const span = valueSpans[idx];
+            if (slider.value != angle) {
+                slider.value = angle;
+                span.textContent = angle;
+                addLog(`🔄 舵机${idx+1} 同步为 ${angle}° (外部)`);
             }
         });
 
         mqttClient.on('error', (err) => {
-            addLog(`❌ MQTT 错误：${err.message}`);
-            mqttStatusSpan.innerText = "❌ 连接错误";
-            mqttStatusSpan.style.backgroundColor = "#ef4444";
-            mqttStatusSpan.style.color = "white";
+            addLog(`❌ MQTT 错误: ${err.message}`);
+            mqttStatusSpan.textContent = "❌ 错误";
+            mqttStatusSpan.style.color = "#f87171";
         });
 
         mqttClient.on('reconnect', () => {
-            addLog(`🔄 MQTT 正在重连...`);
-            mqttStatusSpan.innerText = "🔄 重连中...";
-            mqttStatusSpan.style.backgroundColor = "#facc15";
-            mqttStatusSpan.style.color = "#1e293b";
+            addLog(`🔄 重连中...`);
+            mqttStatusSpan.textContent = "🔄 重连...";
+            mqttStatusSpan.style.color = "#facc15";
         });
 
         mqttClient.on('offline', () => {
-            addLog(`⚠️ MQTT 客户端离线`);
-            mqttStatusSpan.innerText = "⚠️ 离线";
-            mqttStatusSpan.style.backgroundColor = "#9ca3af";
-            mqttStatusSpan.style.color = "white";
+            addLog(`⚠️ 离线`);
+            mqttStatusSpan.textContent = "⚠️ 离线";
+            mqttStatusSpan.style.color = "#94a3b8";
         });
     }
 
-    // 绑定按钮点击事件
-    btn.addEventListener('click', () => {
-        if (mqttClient && mqttClient.connected) {
-            toggleState();
-        } else {
-            addLog(`⚠️ 当前未连接 MQTT，尝试重新连接...`);
-            connectMQTT();
-        }
-    });
-
-    // 启动连接
+    // 初始化
+    initSliders();
     connectMQTT();
 </script>
 </body>
