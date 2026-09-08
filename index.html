@@ -58,6 +58,7 @@
             margin-top: 20px;
             color: #27ae60;
             font-size: 0.95rem;
+            min-height: 24px;
         }
         .hint {
             background: #ecf0f1;
@@ -91,15 +92,48 @@
         }
         .config-box button {
             margin-top: 10px;
-            padding: 6px 20px;
+            padding: 8px 24px;
             background: #007bff;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 1rem;
         }
         .config-box button:hover {
             background: #0056b3;
+        }
+        .config-box button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .connected-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .indicator-on {
+            background: #27ae60;
+            animation: pulse 1.5s infinite;
+        }
+        .indicator-off {
+            background: #e74c3c;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .topic-display {
+            background: #e9ecef;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            margin: 4px 0;
+            word-break: break-all;
         }
     </style>
 </head>
@@ -111,12 +145,23 @@
     <div class="config-box">
         <h3 style="margin-top:0;color:#856404;">🔐 HiveMQ 配置</h3>
         <label>WebSocket URL (端口8884)</label>
-        <input type="text" id="mqttUrl" value="wss://broker.hivemq.com:8884/mqtt">
+        <input type="text" id="mqttUrl" value="wss://6f6fcbc531074775a121762c2c89047f.s1.eu.hivemq.cloud:8884/mqtt">
         <label>用户名</label>
-        <input type="text" id="mqttUser" placeholder="你的HiveMQ用户名">
+        <input type="text" id="mqttUser" value="Laolala501">
         <label>密码</label>
-        <input type="password" id="mqttPass" placeholder="你的HiveMQ密码">
-        <button onclick="connectMQTT()">连接 MQTT</button>
+        <input type="password" id="mqttPass" value="Laola1126">
+        <button id="connectBtn" onclick="toggleConnection()">连接 MQTT</button>
+        <div style="margin-top:10px;font-size:0.9rem;">
+            <span class="connected-indicator indicator-off" id="indicator"></span>
+            <span id="connectionStatus">未连接</span>
+        </div>
+    </div>
+
+    <!-- 调试信息 -->
+    <div style="background:#f8f9fa;padding:10px;border-radius:8px;margin-bottom:15px;text-align:left;font-size:0.85rem;">
+        <div><strong>📡 订阅主题:</strong></div>
+        <div class="topic-display">esp32/servo1/control</div>
+        <div class="topic-display">esp32/servo2/control</div>
     </div>
 
     <div class="slider-container">
@@ -141,10 +186,11 @@
         <div class="angle-value" id="value2">90°</div>
     </div>
 
-    <div id="status">⏳ 请点击"连接 MQTT"</div>
+    <div id="status">💡 请点击"连接 MQTT" 开始控制</div>
     <div class="hint">
         ⚡ 使用 HiveMQ 安全端口 (8883/8884)<br>
-        滑块值通过 JSON 格式发布：{"angle": 90}
+        滑块值通过 JSON 格式发布：{"angle": 90}<br>
+        💡 如果连接后立即断开，请检查用户名密码是否正确
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.5.4/mqtt.min.js"></script>
@@ -157,9 +203,30 @@
         const value1 = document.getElementById('value1');
         const value2 = document.getElementById('value2');
         const statusDiv = document.getElementById('status');
+        const connectBtn = document.getElementById('connectBtn');
+        const indicator = document.getElementById('indicator');
+        const connectionStatus = document.getElementById('connectionStatus');
 
         const MQTT_TOPIC_1 = 'esp32/servo1/control';
         const MQTT_TOPIC_2 = 'esp32/servo2/control';
+
+        // 更新连接状态UI
+        function updateConnectionUI(connected) {
+            isConnected = connected;
+            if (connected) {
+                indicator.className = 'connected-indicator indicator-on';
+                connectionStatus.textContent = '已连接';
+                connectionStatus.style.color = '#27ae60';
+                connectBtn.textContent = '断开 MQTT';
+                connectBtn.style.background = '#dc3545';
+            } else {
+                indicator.className = 'connected-indicator indicator-off';
+                connectionStatus.textContent = '未连接';
+                connectionStatus.style.color = '#e74c3c';
+                connectBtn.textContent = '连接 MQTT';
+                connectBtn.style.background = '#007bff';
+            }
+        }
 
         // 发布消息
         function publishAngle(topic, angle) {
@@ -167,39 +234,56 @@
                 console.warn('MQTT未连接');
                 statusDiv.innerHTML = '⚠️ 请先连接MQTT';
                 statusDiv.style.color = '#f39c12';
-                return;
+                return false;
             }
             const payload = JSON.stringify({ angle: angle });
             client.publish(topic, payload, { qos: 1, retain: false }, (err) => {
                 if (err) {
                     console.error('发布失败:', err);
-                    statusDiv.innerHTML = '❌ 发布失败';
+                    statusDiv.innerHTML = '❌ 发布失败: ' + err.message;
                     statusDiv.style.color = '#e74c3c';
                 } else {
-                    statusDiv.innerHTML = '✅ 已发送: ' + angle + '°';
+                    statusDiv.innerHTML = '✅ 已发送: ' + angle + '° 到 ' + topic;
                     statusDiv.style.color = '#27ae60';
                 }
             });
+            return true;
         }
 
-        // 滑块事件
+        // 滑块事件 - 防抖
+        let publishTimeout = null;
         slider1.addEventListener('input', function() {
             const val = parseInt(this.value);
             value1.textContent = val + '°';
-            publishAngle(MQTT_TOPIC_1, val);
+            clearTimeout(publishTimeout);
+            publishTimeout = setTimeout(() => {
+                publishAngle(MQTT_TOPIC_1, val);
+            }, 50);
         });
 
         slider2.addEventListener('input', function() {
             const val = parseInt(this.value);
             value2.textContent = val + '°';
-            publishAngle(MQTT_TOPIC_2, val);
+            clearTimeout(publishTimeout);
+            publishTimeout = setTimeout(() => {
+                publishAngle(MQTT_TOPIC_2, val);
+            }, 50);
         });
 
-        // 连接MQTT（由按钮触发）
+        // 切换连接/断开
+        function toggleConnection() {
+            if (isConnected) {
+                disconnectMQTT();
+            } else {
+                connectMQTT();
+            }
+        }
+
+        // 连接MQTT
         function connectMQTT() {
-            const brokerUrl = document.getElementById('mqttUrl').value;
-            const username = document.getElementById('mqttUser').value;
-            const password = document.getElementById('mqttPass').value;
+            const brokerUrl = document.getElementById('mqttUrl').value.trim();
+            const username = document.getElementById('mqttUser').value.trim();
+            const password = document.getElementById('mqttPass').value.trim();
 
             if (!brokerUrl) {
                 alert('请输入WebSocket URL');
@@ -211,53 +295,119 @@
                 return;
             }
 
-            statusDiv.innerHTML = '⏳ 连接 MQTT...';
+            statusDiv.innerHTML = '⏳ 正在连接 MQTT...';
             statusDiv.style.color = '#f39c12';
+            connectBtn.disabled = true;
+            connectBtn.textContent = '连接中...';
+
+            // 生成唯一的Client ID（避免与ESP32冲突）
+            const clientId = 'web-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
 
             const options = {
-                clientId: 'web-' + Math.random().toString(16).substr(2, 8),
+                clientId: clientId,
                 username: username,
                 password: password,
                 clean: true,
                 keepalive: 60,
-                reconnectPeriod: 3000,
+                reconnectPeriod: 5000,  // 自动重连
+                connectTimeout: 30000,
+                will: {
+                    topic: 'esp32/status',
+                    payload: JSON.stringify({ status: 'offline', client: clientId }),
+                    qos: 1,
+                    retain: false
+                }
             };
+
+            console.log('Connecting with options:', {
+                url: brokerUrl,
+                clientId: clientId,
+                username: username
+            });
 
             try {
                 if (client) {
                     client.end(true);
+                    client = null;
                 }
+
                 client = mqtt.connect(brokerUrl, options);
 
-                client.on('connect', () => {
-                    isConnected = true;
+                client.on('connect', (connack) => {
+                    console.log('✅ MQTT connected!', connack);
+                    updateConnectionUI(true);
                     statusDiv.innerHTML = '✅ MQTT 已连接 (端口8884)';
                     statusDiv.style.color = '#27ae60';
-                    console.log('MQTT connected');
+                    connectBtn.disabled = false;
                     
-                    // 发送当前滑块值
-                    publishAngle(MQTT_TOPIC_1, parseInt(slider1.value));
-                    publishAngle(MQTT_TOPIC_2, parseInt(slider2.value));
+                    // 发送当前滑块值同步
+                    setTimeout(() => {
+                        publishAngle(MQTT_TOPIC_1, parseInt(slider1.value));
+                        publishAngle(MQTT_TOPIC_2, parseInt(slider2.value));
+                    }, 500);
                 });
 
                 client.on('error', (err) => {
-                    isConnected = false;
+                    console.error('❌ MQTT error:', err);
                     statusDiv.innerHTML = '❌ 连接错误: ' + err.message;
                     statusDiv.style.color = '#e74c3c';
-                    console.error('MQTT error:', err);
+                    updateConnectionUI(false);
+                    connectBtn.disabled = false;
+                    connectBtn.textContent = '连接 MQTT';
                 });
 
                 client.on('close', () => {
-                    isConnected = false;
-                    statusDiv.innerHTML = '⚠️ 连接断开';
+                    console.warn('⚠️ MQTT connection closed');
+                    if (isConnected) {
+                        statusDiv.innerHTML = '⚠️ 连接已关闭，尝试重连...';
+                        statusDiv.style.color = '#e67e22';
+                    }
+                    updateConnectionUI(false);
+                    connectBtn.disabled = false;
+                    connectBtn.textContent = '连接 MQTT';
+                });
+
+                client.on('offline', () => {
+                    console.warn('⚠️ MQTT offline');
+                    statusDiv.innerHTML = '⚠️ 离线状态，等待重连...';
                     statusDiv.style.color = '#e67e22';
-                    console.warn('MQTT disconnected');
+                    updateConnectionUI(false);
+                    connectBtn.disabled = false;
+                    connectBtn.textContent = '连接 MQTT';
+                });
+
+                client.on('reconnect', () => {
+                    console.log('🔄 MQTT reconnecting...');
+                    statusDiv.innerHTML = '🔄 正在重连...';
+                    statusDiv.style.color = '#f39c12';
                 });
 
             } catch (e) {
                 statusDiv.innerHTML = '❌ 异常: ' + e.message;
                 statusDiv.style.color = '#e74c3c';
                 console.error('Exception:', e);
+                updateConnectionUI(false);
+                connectBtn.disabled = false;
+                connectBtn.textContent = '连接 MQTT';
+            }
+        }
+
+        // 断开MQTT
+        function disconnectMQTT() {
+            if (client) {
+                client.end(true, () => {
+                    console.log('🔌 MQTT disconnected manually');
+                    client = null;
+                    updateConnectionUI(false);
+                    statusDiv.innerHTML = '🔌 已手动断开连接';
+                    statusDiv.style.color = '#6c757d';
+                    connectBtn.disabled = false;
+                    connectBtn.textContent = '连接 MQTT';
+                });
+            } else {
+                updateConnectionUI(false);
+                connectBtn.disabled = false;
+                connectBtn.textContent = '连接 MQTT';
             }
         }
 
@@ -265,6 +415,19 @@
         window.addEventListener('beforeunload', function() {
             if (client && isConnected) {
                 client.end(true);
+            }
+        });
+
+        // 初始化状态
+        updateConnectionUI(false);
+        
+        // 自动连接（可选）
+        // 页面加载后自动尝试连接
+        window.addEventListener('load', function() {
+            // 如果输入框有值，自动连接
+            if (document.getElementById('mqttUser').value && 
+                document.getElementById('mqttPass').value) {
+                setTimeout(connectMQTT, 1000);
             }
         });
     </script>
